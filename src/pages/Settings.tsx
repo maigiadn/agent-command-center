@@ -38,6 +38,7 @@ interface WebhookFormData {
   name: string;
   description: string;
   endpoint: string;
+  n8nWebhookUrl: string;
   status: "active" | "inactive" | "error";
   fields: SchemaField[];
 }
@@ -54,6 +55,7 @@ const emptyForm: WebhookFormData = {
   name: "",
   description: "",
   endpoint: "",
+  n8nWebhookUrl: "",
   status: "inactive",
   fields: [],
 };
@@ -82,6 +84,7 @@ export default function Settings() {
       name: wh.name,
       description: wh.description,
       endpoint: wh.endpoint,
+      n8nWebhookUrl: wh.n8nWebhookUrl || "",
       status: wh.status,
       fields: existingFields,
     });
@@ -120,6 +123,7 @@ export default function Settings() {
                 name: form.name,
                 description: form.description,
                 endpoint: form.endpoint,
+                n8nWebhookUrl: form.n8nWebhookUrl,
                 status: form.status,
               }
             : w
@@ -135,6 +139,7 @@ export default function Settings() {
           name: form.name,
           description: form.description,
           endpoint: form.endpoint,
+          n8nWebhookUrl: form.n8nWebhookUrl,
           status: form.status,
         },
       ]);
@@ -187,6 +192,11 @@ export default function Settings() {
               <p className="text-sm text-muted-foreground mt-0.5 truncate">
                 {wh.endpoint}
               </p>
+              {wh.n8nWebhookUrl && (
+                <p className="text-xs text-muted-foreground/60 mt-0.5 truncate font-mono">
+                  n8n: {wh.n8nWebhookUrl}
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-1 ml-4 shrink-0">
               <Button
@@ -274,6 +284,21 @@ export default function Settings() {
                 placeholder="/api/webhooks/my-workflow"
                 className="font-mono text-sm"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>n8n Webhook URL</Label>
+              <Input
+                value={form.n8nWebhookUrl}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, n8nWebhookUrl: e.target.value }))
+                }
+                placeholder="https://n8n.yourdomain.com/webhook/my-workflow"
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                URL webhook thực tế trên n8n instance của bạn. Backend proxy sẽ forward request tới URL này.
+              </p>
             </div>
 
             <div className="space-y-2">

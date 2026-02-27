@@ -9,6 +9,7 @@ export const mockWebhooks: Webhook[] = [
     status: "active",
     lastRun: "2026-02-27T08:30:00Z",
     endpoint: "/api/webhooks/wh-001",
+    n8nWebhookUrl: "https://n8n.local/webhook/server-health",
   },
   {
     id: "wh-002",
@@ -17,6 +18,7 @@ export const mockWebhooks: Webhook[] = [
     status: "active",
     lastRun: "2026-02-26T23:00:00Z",
     endpoint: "/api/webhooks/wh-002",
+    n8nWebhookUrl: "https://n8n.local/webhook/db-backup",
   },
   {
     id: "wh-003",
@@ -24,6 +26,7 @@ export const mockWebhooks: Webhook[] = [
     description: "Deploys the latest main branch to the staging environment",
     status: "inactive",
     endpoint: "/api/webhooks/wh-003",
+    n8nWebhookUrl: "https://n8n.local/webhook/deploy-staging",
   },
   {
     id: "wh-004",
@@ -32,6 +35,7 @@ export const mockWebhooks: Webhook[] = [
     status: "active",
     lastRun: "2026-02-24T09:00:00Z",
     endpoint: "/api/webhooks/wh-004",
+    n8nWebhookUrl: "https://n8n.local/webhook/weekly-digest",
   },
   {
     id: "wh-005",
@@ -40,6 +44,7 @@ export const mockWebhooks: Webhook[] = [
     status: "error",
     lastRun: "2026-02-27T06:00:00Z",
     endpoint: "/api/webhooks/wh-005",
+    n8nWebhookUrl: "https://n8n.local/webhook/ssl-check",
   },
 ];
 
