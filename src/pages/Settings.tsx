@@ -84,6 +84,7 @@ export default function Settings() {
       name: wh.name,
       description: wh.description,
       endpoint: wh.endpoint,
+      n8nWebhookUrl: wh.n8nWebhookUrl || "",
       status: wh.status,
       fields: existingFields,
     });
