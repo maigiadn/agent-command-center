@@ -192,6 +192,11 @@ export default function Settings() {
               <p className="text-sm text-muted-foreground mt-0.5 truncate">
                 {wh.endpoint}
               </p>
+              {wh.n8nWebhookUrl && (
+                <p className="text-xs text-muted-foreground/60 mt-0.5 truncate font-mono">
+                  n8n: {wh.n8nWebhookUrl}
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-1 ml-4 shrink-0">
               <Button
