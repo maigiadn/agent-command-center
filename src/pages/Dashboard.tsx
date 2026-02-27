@@ -3,7 +3,7 @@ import { fetchWebhooks, executeWorkflow } from "@/lib/api";
 import type { Webhook, WorkflowResult } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -12,12 +12,12 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Play, Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Play, Loader2, CheckCircle2, XCircle, Clock, Plus, Trash2 } from "lucide-react";
 
 export default function Dashboard() {
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [runDialog, setRunDialog] = useState<Webhook | null>(null);
-  const [inputData, setInputData] = useState("");
+  const [keyValuePairs, setKeyValuePairs] = useState<{ key: string, value: string }[]>([{ key: "", value: "" }]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<WorkflowResult | null>(null);
 
@@ -33,7 +33,7 @@ export default function Dashboard() {
 
   const openRun = (wh: Webhook) => {
     setRunDialog(wh);
-    setInputData("");
+    setKeyValuePairs([{ key: "", value: "" }]);
     setResult(null);
   };
 
@@ -42,7 +42,15 @@ export default function Dashboard() {
     setLoading(true);
     setResult(null);
     try {
-      const res = await executeWorkflow(runDialog.id, inputData || undefined);
+      const payloadObj: Record<string, string> = {};
+      keyValuePairs.forEach(({ key, value }) => {
+        if (key.trim()) {
+          payloadObj[key.trim()] = value;
+        }
+      });
+      const inputData = Object.keys(payloadObj).length > 0 ? JSON.stringify(payloadObj) : undefined;
+
+      const res = await executeWorkflow(runDialog.id, inputData);
       setResult(res);
       // Refresh webhooks to update lastRun timestamp
       await loadWebhooks();
@@ -129,15 +137,58 @@ export default function Dashboard() {
             {/* Input area */}
             {!result && (
               <>
-                <div className="space-y-2">
-                  <Label className="text-sm">Dữ liệu đầu vào (JSON, tùy chọn)</Label>
-                  <Textarea
-                    value={inputData}
-                    onChange={(e) => setInputData(e.target.value)}
-                    placeholder='{"key": "value"}'
-                    className="font-mono text-sm min-h-[80px]"
+                <div className="space-y-4">
+                  <Label className="text-sm">Dữ liệu đầu vào (Tùy chọn)</Label>
+                  <div className="space-y-2">
+                    {keyValuePairs.map((pair, index) => (
+                      <div key={index} className="flex gap-2 items-center">
+                        <Input
+                          placeholder="Key (VD: prompt)"
+                          value={pair.key}
+                          onChange={(e) => {
+                            const newPairs = [...keyValuePairs];
+                            newPairs[index].key = e.target.value;
+                            setKeyValuePairs(newPairs);
+                          }}
+                          className="flex-1 font-mono text-sm"
+                          disabled={loading}
+                        />
+                        <Input
+                          placeholder="Value"
+                          value={pair.value}
+                          onChange={(e) => {
+                            const newPairs = [...keyValuePairs];
+                            newPairs[index].value = e.target.value;
+                            setKeyValuePairs(newPairs);
+                          }}
+                          className="flex-1 font-mono text-sm"
+                          disabled={loading}
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            const newPairs = keyValuePairs.filter((_, i) => i !== index);
+                            setKeyValuePairs(newPairs);
+                          }}
+                          disabled={loading || (keyValuePairs.length === 1 && !keyValuePairs[0].key)}
+                          className="text-muted-foreground hover:text-destructive shrink-0"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setKeyValuePairs([...keyValuePairs, { key: "", value: "" }])}
                     disabled={loading}
-                  />
+                    className="w-full gap-2 border-dashed"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Thêm trường
+                  </Button>
                 </div>
                 <Button
                   onClick={handleRun}
@@ -164,8 +215,8 @@ export default function Dashboard() {
               <div className="space-y-3">
                 <div
                   className={`flex items-center gap-2 p-3 rounded-lg ${result.success
-                      ? "bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))]"
-                      : "bg-destructive/10 text-destructive"
+                    ? "bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))]"
+                    : "bg-destructive/10 text-destructive"
                     }`}
                 >
                   {result.success ? (
