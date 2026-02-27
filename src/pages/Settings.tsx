@@ -123,6 +123,7 @@ export default function Settings() {
                 name: form.name,
                 description: form.description,
                 endpoint: form.endpoint,
+                n8nWebhookUrl: form.n8nWebhookUrl,
                 status: form.status,
               }
             : w
