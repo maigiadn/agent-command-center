@@ -1,97 +1,196 @@
-import { useNavigate } from "react-router-dom";
-import { mockWebhooks } from "@/lib/api";
+import { useState } from "react";
+import { mockWebhooks, executeWorkflow } from "@/lib/api";
+import type { Webhook, WorkflowResult } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Play, Zap } from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Play, Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
 
 export default function Dashboard() {
-  const navigate = useNavigate();
+  const [webhooks] = useState<Webhook[]>([...mockWebhooks]);
+  const [runDialog, setRunDialog] = useState<Webhook | null>(null);
+  const [inputData, setInputData] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<WorkflowResult | null>(null);
+
+  const openRun = (wh: Webhook) => {
+    setRunDialog(wh);
+    setInputData("");
+    setResult(null);
+  };
+
+  const handleRun = async () => {
+    if (!runDialog) return;
+    setLoading(true);
+    setResult(null);
+    try {
+      const res = await executeWorkflow(runDialog.id, inputData || undefined);
+      setResult(res);
+    } catch {
+      setResult({ success: false, error: "Unexpected error" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatLastRun = (date?: string) => {
+    if (!date) return null;
+    const d = new Date(date);
+    const now = new Date();
+    const diffMs = now.getTime() - d.getTime();
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 60) return `${diffMin} phút trước`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `${diffHours} giờ trước`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} ngày trước`;
+  };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Webhook Registry</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Workflows</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Manage and trigger your n8n workflow endpoints
+          Chọn workflow và nhấn "Chạy" để kích hoạt
         </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {[
-          { label: "Total Workflows", value: mockWebhooks.length, icon: Zap },
-          { label: "Active", value: mockWebhooks.filter((w) => w.status === "active").length, icon: Zap },
-          { label: "Errors", value: mockWebhooks.filter((w) => w.status === "error").length, icon: Zap },
-        ].map((stat) => (
+      {/* Workflow cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {webhooks.map((wh) => (
           <div
-            key={stat.label}
-            className="rounded-lg border border-border bg-card p-4 space-y-1"
+            key={wh.id}
+            className="rounded-lg border border-border bg-card p-5 flex flex-col gap-3"
           >
-            <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
-              {stat.label}
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="font-medium text-foreground leading-tight">{wh.name}</h3>
+              <StatusBadge status={wh.status} />
+            </div>
+            <p className="text-sm text-muted-foreground flex-1 line-clamp-2">
+              {wh.description}
             </p>
-            <p className="text-2xl font-semibold font-mono text-foreground">{stat.value}</p>
+            <div className="flex items-center justify-between mt-auto pt-2">
+              {wh.lastRun ? (
+                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {formatLastRun(wh.lastRun)}
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">Chưa chạy</span>
+              )}
+              <Button
+                size="sm"
+                className="gap-1.5"
+                onClick={() => openRun(wh)}
+                disabled={wh.status === "inactive"}
+              >
+                <Play className="h-3 w-3" />
+                Chạy
+              </Button>
+            </div>
           </div>
         ))}
+        {webhooks.length === 0 && (
+          <div className="col-span-full text-center text-muted-foreground py-12">
+            Chưa có workflow nào. Vào Settings để thêm.
+          </div>
+        )}
       </div>
 
-      {/* Table */}
-      <div className="rounded-lg border border-border overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50 hover:bg-muted/50">
-              <TableHead className="font-mono text-xs">Name</TableHead>
-              <TableHead className="font-mono text-xs hidden md:table-cell">Description</TableHead>
-              <TableHead className="font-mono text-xs">Status</TableHead>
-              <TableHead className="font-mono text-xs hidden sm:table-cell">Last Run</TableHead>
-              <TableHead className="font-mono text-xs text-right">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {mockWebhooks.map((wh) => (
-              <TableRow key={wh.id} className="hover:bg-accent/40">
-                <TableCell className="font-medium">{wh.name}</TableCell>
-                <TableCell className="text-muted-foreground text-sm hidden md:table-cell max-w-xs truncate">
-                  {wh.description}
-                </TableCell>
-                <TableCell>
-                  <StatusBadge status={wh.status} />
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground font-mono hidden sm:table-cell">
-                  {wh.lastRun
-                    ? new Date(wh.lastRun).toLocaleString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : "—"}
-                </TableCell>
-                <TableCell className="text-right">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="gap-1.5 text-primary border-primary/30 hover:bg-primary/10"
-                    onClick={() => navigate(`/execute?id=${wh.id}`)}
-                    disabled={wh.status === "inactive"}
-                  >
-                    <Play className="h-3 w-3" />
-                    Execute
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+      {/* Run dialog */}
+      <Dialog open={!!runDialog} onOpenChange={(open) => !open && setRunDialog(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Chạy: {runDialog?.name}</DialogTitle>
+            <DialogDescription>{runDialog?.description}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            {/* Input area */}
+            {!result && (
+              <>
+                <div className="space-y-2">
+                  <Label className="text-sm">Dữ liệu đầu vào (JSON, tùy chọn)</Label>
+                  <Textarea
+                    value={inputData}
+                    onChange={(e) => setInputData(e.target.value)}
+                    placeholder='{"key": "value"}'
+                    className="font-mono text-sm min-h-[80px]"
+                    disabled={loading}
+                  />
+                </div>
+                <Button
+                  onClick={handleRun}
+                  disabled={loading}
+                  className="w-full gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Đang chạy...
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4" />
+                      Chạy Workflow
+                    </>
+                  )}
+                </Button>
+              </>
+            )}
+
+            {/* Result display */}
+            {result && (
+              <div className="space-y-3">
+                <div
+                  className={`flex items-center gap-2 p-3 rounded-lg ${
+                    result.success
+                      ? "bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))]"
+                      : "bg-destructive/10 text-destructive"
+                  }`}
+                >
+                  {result.success ? (
+                    <CheckCircle2 className="h-5 w-5 shrink-0" />
+                  ) : (
+                    <XCircle className="h-5 w-5 shrink-0" />
+                  )}
+                  <span className="font-medium text-sm">
+                    {result.success ? "Thành công" : "Lỗi"}
+                  </span>
+                  {result.duration && (
+                    <span className="ml-auto text-xs opacity-70">{result.duration}</span>
+                  )}
+                </div>
+
+                {/* Response body */}
+                <div className="rounded-lg border border-border bg-muted/50 p-3 max-h-[300px] overflow-auto">
+                  <pre className="text-xs font-mono whitespace-pre-wrap break-words text-foreground">
+                    {result.error
+                      ? result.error
+                      : JSON.stringify(result.data, null, 2)}
+                  </pre>
+                </div>
+
+                <Button
+                  variant="outline"
+                  onClick={() => setResult(null)}
+                  className="w-full"
+                >
+                  Chạy lại
+                </Button>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
