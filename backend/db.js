@@ -1,8 +1,14 @@
 const Database = require('better-sqlite3');
 const path = require('path');
+const fs = require('fs');
 
-// SQLite will create the .db file if it doesn't exist
-const dbPath = path.resolve(__dirname, 'database.db');
+// Store database in /app/data/ directory (for Docker volume mount)
+const dataDir = path.resolve(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+  fs.mkdirSync(dataDir, { recursive: true });
+}
+
+const dbPath = path.resolve(dataDir, 'database.db');
 const db = new Database(dbPath, { verbose: console.log });
 
 // Create the webhooks table
