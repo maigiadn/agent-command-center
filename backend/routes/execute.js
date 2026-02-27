@@ -3,13 +3,24 @@ const db = require('../db');
 
 const router = express.Router();
 
+// Auto-rewrite public n8n URL to internal Docker URL
+// e.g. https://n8n.maivangia.com/webhook/xxx → http://n8n_n8n:5678/webhook/xxx
+const N8N_PUBLIC_URL = process.env.N8N_PUBLIC_URL || '';   // e.g. "https://n8n.maivangia.com"
+const N8N_INTERNAL_URL = process.env.N8N_INTERNAL_URL || ''; // e.g. "http://n8n_n8n:5678"
+
+function rewriteUrl(originalUrl) {
+    if (N8N_PUBLIC_URL && N8N_INTERNAL_URL && originalUrl.startsWith(N8N_PUBLIC_URL)) {
+        return originalUrl.replace(N8N_PUBLIC_URL, N8N_INTERNAL_URL);
+    }
+    return originalUrl;
+}
+
 // POST /api/execute/:id - Proxy to n8n
 router.post('/:id', async (req, res) => {
     const { id } = req.params;
-    const payload = req.body; // Can be an empty object or any JSON
+    const payload = req.body;
 
     try {
-        // 1. Look up the webhook by id in the database
         const webhook = db.prepare('SELECT * FROM webhooks WHERE id = ?').get(id);
 
         if (!webhook) {
@@ -20,7 +31,6 @@ router.post('/:id', async (req, res) => {
             });
         }
 
-        // 2. Check that status === "active"
         if (webhook.status !== 'active') {
             return res.status(400).json({
                 success: false,
@@ -29,7 +39,9 @@ router.post('/:id', async (req, res) => {
             });
         }
 
-        const n8nUrl = webhook.n8nWebhookUrl;
+        // Rewrite URL: public → internal Docker hostname
+        const n8nUrl = rewriteUrl(webhook.n8nWebhookUrl);
+        console.log(`Executing webhook ${id}: ${webhook.n8nWebhookUrl} → ${n8nUrl}`);
 
         // 3. Forward request to n8nWebhookUrl & Measure execution time
         const startTime = performance.now();
