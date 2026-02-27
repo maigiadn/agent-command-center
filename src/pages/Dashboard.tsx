@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { mockWebhooks, executeWorkflow } from "@/lib/api";
+import { useState, useEffect } from "react";
+import { fetchWebhooks, executeWorkflow } from "@/lib/api";
 import type { Webhook, WorkflowResult } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
@@ -15,11 +15,21 @@ import {
 import { Play, Loader2, CheckCircle2, XCircle, Clock } from "lucide-react";
 
 export default function Dashboard() {
-  const [webhooks] = useState<Webhook[]>([...mockWebhooks]);
+  const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [runDialog, setRunDialog] = useState<Webhook | null>(null);
   const [inputData, setInputData] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<WorkflowResult | null>(null);
+
+  // Load webhooks from backend on mount
+  const loadWebhooks = async () => {
+    const res = await fetchWebhooks();
+    if (res.data) setWebhooks(res.data);
+  };
+
+  useEffect(() => {
+    loadWebhooks();
+  }, []);
 
   const openRun = (wh: Webhook) => {
     setRunDialog(wh);
@@ -34,6 +44,8 @@ export default function Dashboard() {
     try {
       const res = await executeWorkflow(runDialog.id, inputData || undefined);
       setResult(res);
+      // Refresh webhooks to update lastRun timestamp
+      await loadWebhooks();
     } catch {
       setResult({ success: false, error: "Unexpected error" });
     } finally {
@@ -151,11 +163,10 @@ export default function Dashboard() {
             {result && (
               <div className="space-y-3">
                 <div
-                  className={`flex items-center gap-2 p-3 rounded-lg ${
-                    result.success
+                  className={`flex items-center gap-2 p-3 rounded-lg ${result.success
                       ? "bg-[hsl(var(--success)/0.1)] text-[hsl(var(--success))]"
                       : "bg-destructive/10 text-destructive"
-                  }`}
+                    }`}
                 >
                   {result.success ? (
                     <CheckCircle2 className="h-5 w-5 shrink-0" />

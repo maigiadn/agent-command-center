@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { mockWebhooks } from "@/lib/api";
+import { useState, useEffect } from "react";
+import { fetchWebhooks, createWebhook, updateWebhook, deleteWebhook } from "@/lib/api";
 import type { Webhook } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,12 +44,23 @@ const emptyForm: WebhookFormData = {
 
 export default function Settings() {
   const { toast } = useToast();
-  const [webhooks, setWebhooks] = useState<Webhook[]>([...mockWebhooks]);
+  const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [form, setForm] = useState<WebhookFormData>({ ...emptyForm });
+  const [saving, setSaving] = useState(false);
+
+  // Load webhooks from backend on mount
+  const loadWebhooks = async () => {
+    const res = await fetchWebhooks();
+    if (res.data) setWebhooks(res.data);
+  };
+
+  useEffect(() => {
+    loadWebhooks();
+  }, []);
 
   const openAdd = () => {
     setEditingId(null);
@@ -73,15 +84,20 @@ export default function Settings() {
     setDeleteDialogOpen(true);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deletingId) return;
-    setWebhooks((prev) => prev.filter((w) => w.id !== deletingId));
-    toast({ title: "Đã xoá", description: "Workflow đã được xoá." });
+    const res = await deleteWebhook(deletingId);
+    if (res.error) {
+      toast({ title: "Lỗi", description: res.error, variant: "destructive" });
+    } else {
+      toast({ title: "Đã xoá", description: "Workflow đã được xoá." });
+      await loadWebhooks();
+    }
     setDeleteDialogOpen(false);
     setDeletingId(null);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name.trim() || !form.n8nWebhookUrl.trim()) {
       toast({
         title: "Thiếu thông tin",
@@ -91,30 +107,28 @@ export default function Settings() {
       return;
     }
 
-    if (editingId) {
-      setWebhooks((prev) =>
-        prev.map((w) =>
-          w.id === editingId
-            ? { ...w, name: form.name, description: form.description, n8nWebhookUrl: form.n8nWebhookUrl, status: form.status }
-            : w
-        )
-      );
-      toast({ title: "Đã cập nhật" });
-    } else {
-      const newId = `wh-${String(Date.now()).slice(-4)}`;
-      setWebhooks((prev) => [
-        ...prev,
-        {
-          id: newId,
-          name: form.name,
-          description: form.description,
-          n8nWebhookUrl: form.n8nWebhookUrl,
-          status: form.status,
-        },
-      ]);
-      toast({ title: "Đã tạo workflow mới" });
+    setSaving(true);
+    try {
+      if (editingId) {
+        const res = await updateWebhook(editingId, form);
+        if (res.error) {
+          toast({ title: "Lỗi", description: res.error, variant: "destructive" });
+          return;
+        }
+        toast({ title: "Đã cập nhật" });
+      } else {
+        const res = await createWebhook(form);
+        if (res.error) {
+          toast({ title: "Lỗi", description: res.error, variant: "destructive" });
+          return;
+        }
+        toast({ title: "Đã tạo workflow mới" });
+      }
+      await loadWebhooks();
+      setDialogOpen(false);
+    } finally {
+      setSaving(false);
     }
-    setDialogOpen(false);
   };
 
   return (
@@ -228,8 +242,8 @@ export default function Settings() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Huỷ
             </Button>
-            <Button onClick={handleSave}>
-              {editingId ? "Lưu" : "Tạo"}
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? "Đang lưu..." : editingId ? "Lưu" : "Tạo"}
             </Button>
           </DialogFooter>
         </DialogContent>
