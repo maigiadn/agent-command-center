@@ -1,89 +1,36 @@
-import type { Webhook, WebhookSchema, ExecutionLog, ChatMessage } from "@/types";
+import type { Webhook, WorkflowResult } from "@/types";
 
-// Mock data for frontend development
 export const mockWebhooks: Webhook[] = [
   {
     id: "wh-001",
     name: "Server Health Report",
-    description: "Generates a full health check report for all production servers",
+    description: "Kiểm tra sức khỏe toàn bộ server production",
     status: "active",
     lastRun: "2026-02-27T08:30:00Z",
-    endpoint: "/api/webhooks/wh-001",
     n8nWebhookUrl: "https://n8n.local/webhook/server-health",
   },
   {
     id: "wh-002",
     name: "Database Backup",
-    description: "Triggers a full PostgreSQL backup to S3 cold storage",
+    description: "Sao lưu PostgreSQL lên S3",
     status: "active",
     lastRun: "2026-02-26T23:00:00Z",
-    endpoint: "/api/webhooks/wh-002",
     n8nWebhookUrl: "https://n8n.local/webhook/db-backup",
   },
   {
     id: "wh-003",
     name: "Deploy Staging",
-    description: "Deploys the latest main branch to the staging environment",
+    description: "Deploy nhánh main lên môi trường staging",
     status: "inactive",
-    endpoint: "/api/webhooks/wh-003",
     n8nWebhookUrl: "https://n8n.local/webhook/deploy-staging",
   },
   {
     id: "wh-004",
     name: "Send Weekly Digest",
-    description: "Compiles and sends the weekly analytics digest to the team",
+    description: "Gửi báo cáo phân tích hàng tuần cho team",
     status: "active",
     lastRun: "2026-02-24T09:00:00Z",
-    endpoint: "/api/webhooks/wh-004",
     n8nWebhookUrl: "https://n8n.local/webhook/weekly-digest",
-  },
-  {
-    id: "wh-005",
-    name: "SSL Certificate Check",
-    description: "Scans all domains for expiring SSL certificates",
-    status: "error",
-    lastRun: "2026-02-27T06:00:00Z",
-    endpoint: "/api/webhooks/wh-005",
-    n8nWebhookUrl: "https://n8n.local/webhook/ssl-check",
-  },
-];
-
-export const mockSchema: WebhookSchema = {
-  webhookId: "wh-001",
-  fields: [
-    { name: "target_server", label: "Target Server", type: "select", required: true, options: [
-      { label: "Production US-East", value: "prod-us-east" },
-      { label: "Production EU-West", value: "prod-eu-west" },
-      { label: "Staging", value: "staging" },
-    ]},
-    { name: "report_type", label: "Report Type", type: "select", required: true, options: [
-      { label: "Full Report", value: "full" },
-      { label: "Summary Only", value: "summary" },
-      { label: "Errors Only", value: "errors" },
-    ]},
-    { name: "email_to", label: "Send Report To", type: "text", required: true, placeholder: "team@example.com" },
-    { name: "notes", label: "Additional Notes", type: "textarea", placeholder: "Any specific areas to check..." },
-    { name: "schedule_date", label: "Schedule Date", type: "date" },
-    { name: "attachment", label: "Config Override", type: "file" },
-  ],
-};
-
-export const mockLogs: ExecutionLog[] = [
-  { id: "log-001", webhookName: "Server Health Report", triggeredAt: "2026-02-27T08:30:00Z", status: "success", duration: "12.4s" },
-  { id: "log-002", webhookName: "SSL Certificate Check", triggeredAt: "2026-02-27T06:00:00Z", status: "error", duration: "3.1s", message: "Connection timeout on domain api.example.com" },
-  { id: "log-003", webhookName: "Database Backup", triggeredAt: "2026-02-26T23:00:00Z", status: "success", duration: "45.2s" },
-  { id: "log-004", webhookName: "Send Weekly Digest", triggeredAt: "2026-02-24T09:00:00Z", status: "success", duration: "8.7s" },
-  { id: "log-005", webhookName: "Deploy Staging", triggeredAt: "2026-02-23T14:15:00Z", status: "success", duration: "67.3s" },
-  { id: "log-006", webhookName: "Server Health Report", triggeredAt: "2026-02-23T08:30:00Z", status: "success", duration: "11.8s" },
-  { id: "log-007", webhookName: "SSL Certificate Check", triggeredAt: "2026-02-22T06:00:00Z", status: "success", duration: "2.9s" },
-];
-
-export const mockChatMessages: ChatMessage[] = [
-  {
-    id: "msg-001",
-    role: "assistant",
-    content: "Welcome to Agent Command Center. I can help you trigger workflows, check statuses, and manage your n8n automations. What would you like to do?",
-    timestamp: "2026-02-27T09:00:00Z",
   },
 ];
 
@@ -106,4 +53,37 @@ export async function apiCall<T>(
   } catch (err: any) {
     return { error: err.message || "Network error" };
   }
+}
+
+// Execute a workflow via proxy (mock for now)
+export async function executeWorkflow(
+  webhookId: string,
+  inputData?: string
+): Promise<WorkflowResult> {
+  // In production, this calls /api/execute/:id which proxies to n8n
+  // For now, simulate a response
+  await new Promise((r) => setTimeout(r, 1500 + Math.random() * 1000));
+
+  const random = Math.random();
+  if (random > 0.85) {
+    return {
+      success: false,
+      error: "Connection timeout: n8n instance không phản hồi",
+      duration: "5.0s",
+    };
+  }
+
+  return {
+    success: true,
+    data: {
+      status: "completed",
+      message: `Workflow ${webhookId} đã chạy thành công`,
+      timestamp: new Date().toISOString(),
+      result: {
+        items_processed: Math.floor(Math.random() * 100) + 1,
+        output: "All checks passed",
+      },
+    },
+    duration: `${(Math.random() * 10 + 1).toFixed(1)}s`,
+  };
 }

@@ -2,42 +2,14 @@ export interface Webhook {
   id: string;
   name: string;
   description: string;
-  status: "active" | "inactive" | "error";
+  status: "active" | "inactive";
+  n8nWebhookUrl: string;
   lastRun?: string;
-  endpoint: string;
-  n8nWebhookUrl?: string;
 }
 
-export interface SchemaField {
-  name: string;
-  label: string;
-  type: "text" | "number" | "select" | "file" | "date" | "textarea";
-  required?: boolean;
-  placeholder?: string;
-  options?: { label: string; value: string }[];
-}
-
-export interface WebhookSchema {
-  webhookId: string;
-  fields: SchemaField[];
-}
-
-export interface ChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  timestamp: string;
-  status?: {
-    type: "info" | "running" | "success" | "error";
-    message: string;
-  };
-}
-
-export interface ExecutionLog {
-  id: string;
-  webhookName: string;
-  triggeredAt: string;
-  status: "success" | "error" | "running";
+export interface WorkflowResult {
+  success: boolean;
+  data?: unknown;
+  error?: string;
   duration?: string;
-  message?: string;
 }
