@@ -5,6 +5,7 @@ export interface Webhook {
   status: "active" | "inactive" | "error";
   lastRun?: string;
   endpoint: string;
+  n8nWebhookUrl?: string;
 }
 
 export interface SchemaField {
