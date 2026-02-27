@@ -287,6 +287,21 @@ export default function Settings() {
             </div>
 
             <div className="space-y-2">
+              <Label>n8n Webhook URL</Label>
+              <Input
+                value={form.n8nWebhookUrl}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, n8nWebhookUrl: e.target.value }))
+                }
+                placeholder="https://n8n.yourdomain.com/webhook/my-workflow"
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                URL webhook thực tế trên n8n instance của bạn. Backend proxy sẽ forward request tới URL này.
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label>Description</Label>
               <Textarea
                 value={form.description}
