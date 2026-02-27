@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Execute from "./pages/Execute";
 import Chat from "./pages/Chat";
 import Logs from "./pages/Logs";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
