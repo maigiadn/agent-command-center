@@ -1,5 +1,5 @@
 const express = require('express');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const db = require('../db');
 
 const router = express.Router();
@@ -35,7 +35,7 @@ router.post('/', (req, res) => {
         return res.status(400).json({ error: 'Invalid n8nWebhookUrl' });
     }
 
-    const id = `wh-${uuidv4().substring(0, 8)}`; // Generate a unique ID (e.g., wh-abc123yz)
+    const id = `wh-${crypto.randomUUID().substring(0, 8)}`; // Generate a unique ID (e.g., wh-abc123yz)
 
     try {
         const stmt = db.prepare(`
