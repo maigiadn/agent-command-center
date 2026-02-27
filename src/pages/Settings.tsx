@@ -38,6 +38,7 @@ interface WebhookFormData {
   name: string;
   description: string;
   endpoint: string;
+  n8nWebhookUrl: string;
   status: "active" | "inactive" | "error";
   fields: SchemaField[];
 }
@@ -54,6 +55,7 @@ const emptyForm: WebhookFormData = {
   name: "",
   description: "",
   endpoint: "",
+  n8nWebhookUrl: "",
   status: "inactive",
   fields: [],
 };
