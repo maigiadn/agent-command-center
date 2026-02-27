@@ -25,6 +25,7 @@ const App = () => (
             <Route path="/execute" element={<Execute />} />
             <Route path="/chat" element={<Chat />} />
             <Route path="/logs" element={<Logs />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLayout>

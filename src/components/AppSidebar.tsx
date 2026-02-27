@@ -24,6 +24,7 @@ const navItems = [
   { title: "Execute", url: "/execute", icon: Play },
   { title: "Chat", url: "/chat", icon: MessageSquare },
   { title: "Logs", url: "/logs", icon: ScrollText },
+  { title: "Settings", url: "/settings", icon: Settings },
 ];
 
 export function AppSidebar() {
