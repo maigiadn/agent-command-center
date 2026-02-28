@@ -4,6 +4,7 @@ import type { Webhook, WorkflowResult } from "@/types";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
   Dialog,
@@ -42,10 +43,27 @@ export default function Dashboard() {
     setLoading(true);
     setResult(null);
     try {
-      const payloadObj: Record<string, string> = {};
+      const payloadObj: Record<string, any> = {};
       keyValuePairs.forEach(({ key, value }) => {
         if (key.trim()) {
-          payloadObj[key.trim()] = value;
+          let parsedValue: any = value;
+          try {
+            // only try to parse if it's likely an object, array, boolean, number, or null
+            const trimmed = value.trim();
+            if (
+              trimmed.startsWith("{") ||
+              trimmed.startsWith("[") ||
+              trimmed === "true" ||
+              trimmed === "false" ||
+              trimmed === "null" ||
+              !isNaN(Number(trimmed))
+            ) {
+              parsedValue = JSON.parse(value);
+            }
+          } catch (e) {
+            // fallback to string
+          }
+          payloadObj[key.trim()] = parsedValue;
         }
       });
       const inputData = Object.keys(payloadObj).length > 0 ? JSON.stringify(payloadObj) : undefined;
@@ -153,15 +171,15 @@ export default function Dashboard() {
                           className="flex-1 font-mono text-sm"
                           disabled={loading}
                         />
-                        <Input
-                          placeholder="Value"
+                        <Textarea
+                          placeholder="Value (Văn bản hoặc JSON)"
                           value={pair.value}
                           onChange={(e) => {
                             const newPairs = [...keyValuePairs];
                             newPairs[index].value = e.target.value;
                             setKeyValuePairs(newPairs);
                           }}
-                          className="flex-1 font-mono text-sm"
+                          className="flex-1 font-mono text-sm min-h-[40px] max-h-[200px]"
                           disabled={loading}
                         />
                         <Button
