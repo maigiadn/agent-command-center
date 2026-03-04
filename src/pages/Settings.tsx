@@ -33,6 +33,7 @@ interface WebhookFormData {
   description: string;
   n8nWebhookUrl: string;
   status: "active" | "inactive";
+  defaultKeys: string[];
 }
 
 const emptyForm: WebhookFormData = {
@@ -40,6 +41,7 @@ const emptyForm: WebhookFormData = {
   description: "",
   n8nWebhookUrl: "",
   status: "active",
+  defaultKeys: [],
 };
 
 export default function Settings() {
@@ -75,6 +77,7 @@ export default function Settings() {
       description: wh.description,
       n8nWebhookUrl: wh.n8nWebhookUrl,
       status: wh.status,
+      defaultKeys: wh.defaultKeys || [],
     });
     setDialogOpen(true);
   };
@@ -225,6 +228,54 @@ export default function Settings() {
                 placeholder="Workflow này dùng để làm gì?"
                 rows={2}
               />
+            </div>
+
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Label>Các Key Mặc Định</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setForm(f => ({ ...f, defaultKeys: [...f.defaultKeys, ""] }))}
+                  className="h-8 gap-1"
+                >
+                  <Plus className="h-3 w-3" />
+                  Thêm key
+                </Button>
+              </div>
+
+              <div className="space-y-2">
+                {form.defaultKeys.length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-2 border rounded-md border-dashed">
+                    Chưa có key mặc định.
+                  </p>
+                )}
+                {form.defaultKeys.map((key, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    <Input
+                      value={key}
+                      onChange={(e) => {
+                        const newKeys = [...form.defaultKeys];
+                        newKeys[index] = e.target.value;
+                        setForm(f => ({ ...f, defaultKeys: newKeys }));
+                      }}
+                      placeholder="VD: prompt, user_id..."
+                      className="font-mono text-sm"
+                    />
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        const newKeys = form.defaultKeys.filter((_, i) => i !== index);
+                        setForm(f => ({ ...f, defaultKeys: newKeys }));
+                      }}
+                      className="text-muted-foreground hover:text-destructive shrink-0"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="flex items-center justify-between">

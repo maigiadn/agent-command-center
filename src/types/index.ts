@@ -5,6 +5,7 @@ export interface Webhook {
   status: "active" | "inactive";
   n8nWebhookUrl: string;
   lastRun?: string;
+  defaultKeys?: string[];
 }
 
 export interface WorkflowResult {

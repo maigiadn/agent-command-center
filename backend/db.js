@@ -19,9 +19,22 @@ db.exec(`
     description TEXT,
     status TEXT DEFAULT 'active',
     n8nWebhookUrl TEXT NOT NULL,
-    lastRun TEXT
+    lastRun TEXT,
+    defaultKeys TEXT DEFAULT '[]'
   )
 `);
+
+// Simple migration: add defaultKeys column to existing tables
+try {
+  const tableInfo = db.pragma('table_info(webhooks)');
+  const hasDefaultKeys = tableInfo.some((col) => col.name === 'defaultKeys');
+  if (!hasDefaultKeys) {
+    db.exec(`ALTER TABLE webhooks ADD COLUMN defaultKeys TEXT DEFAULT '[]'`);
+    console.log('Migration: Added defaultKeys column to webhooks table');
+  }
+} catch (e) {
+  // If PRAGMA or ALTER fails, ignore and assume either table doesn't exist yet or it already has it.
+}
 
 console.log('Database initialized at', dbPath);
 

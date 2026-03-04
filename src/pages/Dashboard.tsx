@@ -18,7 +18,7 @@ import { Play, Loader2, CheckCircle2, XCircle, Clock, Plus, Trash2 } from "lucid
 export default function Dashboard() {
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
   const [runDialog, setRunDialog] = useState<Webhook | null>(null);
-  const [keyValuePairs, setKeyValuePairs] = useState<{ key: string, value: string }[]>([{ key: "", value: "" }]);
+  const [keyValuePairs, setKeyValuePairs] = useState<{ key: string, value: string, isDefault?: boolean }[]>([{ key: "", value: "" }]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<WorkflowResult | null>(null);
 
@@ -34,7 +34,14 @@ export default function Dashboard() {
 
   const openRun = (wh: Webhook) => {
     setRunDialog(wh);
-    setKeyValuePairs([{ key: "", value: "" }]);
+
+    // Initialize with default keys if they exist, otherwise a single empty row
+    if (wh.defaultKeys && wh.defaultKeys.length > 0) {
+      setKeyValuePairs(wh.defaultKeys.map(k => ({ key: k, value: "", isDefault: true })));
+    } else {
+      setKeyValuePairs([{ key: "", value: "" }]);
+    }
+
     setResult(null);
   };
 
@@ -164,12 +171,14 @@ export default function Dashboard() {
                           placeholder="Key (VD: prompt)"
                           value={pair.key}
                           onChange={(e) => {
+                            if (pair.isDefault) return;
                             const newPairs = [...keyValuePairs];
                             newPairs[index].key = e.target.value;
                             setKeyValuePairs(newPairs);
                           }}
-                          className="flex-1 font-mono text-sm"
-                          disabled={loading}
+                          className={`flex-1 font-mono text-sm ${pair.isDefault ? "bg-muted text-muted-foreground" : ""}`}
+                          disabled={loading || pair.isDefault}
+                          readOnly={pair.isDefault}
                         />
                         <Textarea
                           placeholder="Value (Văn bản hoặc JSON)"
@@ -189,7 +198,7 @@ export default function Dashboard() {
                             const newPairs = keyValuePairs.filter((_, i) => i !== index);
                             setKeyValuePairs(newPairs);
                           }}
-                          disabled={loading || (keyValuePairs.length === 1 && !keyValuePairs[0].key)}
+                          disabled={loading || pair.isDefault || (keyValuePairs.length === 1 && !keyValuePairs[0].key)}
                           className="text-muted-foreground hover:text-destructive shrink-0"
                         >
                           <Trash2 className="h-4 w-4" />
