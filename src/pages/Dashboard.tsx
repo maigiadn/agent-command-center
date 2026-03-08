@@ -22,6 +22,10 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<WorkflowResult | null>(null);
 
+  // Project grouping state
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
   // Load webhooks from backend on mount
   const loadWebhooks = async () => {
     const res = await fetchWebhooks();
@@ -99,56 +103,120 @@ export default function Dashboard() {
     return `${diffDays} ngày trước`;
   };
 
+  // Extract unique projects
+  const projects = Array.from(new Set(webhooks.map(wh => wh.project || "Mặc định"))).sort();
+
+  // Set default selected project
+  useEffect(() => {
+    if (projects.length > 0 && !selectedProject) {
+      setSelectedProject(projects[0]);
+    }
+  }, [projects, selectedProject]);
+
+  // Filter webhooks
+  const filteredWebhooks = webhooks.filter(wh => {
+    const projectMatch = selectedProject === null || (wh.project || "Mặc định") === selectedProject;
+    const searchMatch = searchQuery === "" ||
+      wh.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      wh.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    return projectMatch && searchMatch;
+  });
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Workflows</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Chọn workflow và nhấn "Chạy" để kích hoạt
-        </p>
+    <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-8rem)]">
+      {/* Sidebar for Projects */}
+      <div className="w-full md:w-64 shrink-0 flex flex-col gap-2">
+        <h2 className="text-lg font-semibold tracking-tight px-2">Dự án</h2>
+        <div className="flex-1 overflow-y-auto space-y-1 pr-2">
+          {projects.map(project => (
+            <button
+              key={project}
+              onClick={() => setSelectedProject(project)}
+              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${selectedProject === project
+                  ? "bg-primary text-primary-foreground font-medium"
+                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                }`}
+            >
+              {project}
+              <span className="ml-2 rtl:mr-2 text-xs opacity-70 float-right">
+                {webhooks.filter(w => (w.project || "Mặc định") === project).length}
+              </span>
+            </button>
+          ))}
+          {projects.length === 0 && (
+            <div className="text-sm text-muted-foreground px-2 italic">Không có dự án</div>
+          )}
+        </div>
       </div>
 
-      {/* Workflow cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {webhooks.map((wh) => (
-          <div
-            key={wh.id}
-            className="rounded-lg border border-border bg-card p-5 flex flex-col gap-3"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <h3 className="font-medium text-foreground leading-tight">{wh.name}</h3>
-              <StatusBadge status={wh.status} />
-            </div>
-            <p className="text-sm text-muted-foreground flex-1 line-clamp-2">
-              {wh.description}
-            </p>
-            <div className="flex items-center justify-between mt-auto pt-2">
-              {wh.lastRun ? (
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {formatLastRun(wh.lastRun)}
-                </span>
-              ) : (
-                <span className="text-xs text-muted-foreground">Chưa chạy</span>
-              )}
-              <Button
-                size="sm"
-                className="gap-1.5"
-                onClick={() => openRun(wh)}
-                disabled={wh.status === "inactive"}
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col space-y-6 overflow-hidden">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Workflows</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Chọn workflow và nhấn "Chạy" để kích hoạt
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Tìm kiếm workflow..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="max-w-md"
+          />
+        </div>
+
+        {/* Workflow cards */}
+        <div className="flex-1 overflow-y-auto pr-2 pb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredWebhooks.map((wh) => (
+              <div
+                key={wh.id}
+                className="rounded-lg border border-border bg-card p-5 flex flex-col gap-3"
               >
-                <Play className="h-3 w-3" />
-                Chạy
-              </Button>
-            </div>
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="font-medium text-foreground leading-tight">{wh.name}</h3>
+                  <StatusBadge status={wh.status} />
+                </div>
+                <p className="text-sm text-muted-foreground flex-1 line-clamp-2">
+                  {wh.description}
+                </p>
+                <div className="flex items-center justify-between mt-auto pt-2">
+                  {wh.lastRun ? (
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {formatLastRun(wh.lastRun)}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">Chưa chạy</span>
+                  )}
+                  <Button
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => openRun(wh)}
+                    disabled={wh.status === "inactive"}
+                  >
+                    <Play className="h-3 w-3" />
+                    Chạy
+                  </Button>
+                </div>
+              </div>
+            ))}
+            {filteredWebhooks.length === 0 && webhooks.length > 0 && (
+              <div className="col-span-full text-center text-muted-foreground py-12">
+                Không tìm thấy workflow nào phù hợp.
+              </div>
+            )}
+            {webhooks.length === 0 && (
+              <div className="col-span-full text-center text-muted-foreground py-12">
+                Chưa có workflow nào. Vào Settings để thêm.
+              </div>
+            )}
           </div>
-        ))}
-        {webhooks.length === 0 && (
-          <div className="col-span-full text-center text-muted-foreground py-12">
-            Chưa có workflow nào. Vào Settings để thêm.
-          </div>
-        )}
+        </div>
       </div>
+
 
       {/* Run dialog */}
       <Dialog open={!!runDialog} onOpenChange={(open) => !open && setRunDialog(null)}>

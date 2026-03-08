@@ -31,7 +31,7 @@ router.get('/', (req, res) => {
 
 // POST /api/webhooks - Create a new webhook
 router.post('/', (req, res) => {
-    const { name, description, n8nWebhookUrl, status = 'active', defaultKeys = [] } = req.body;
+    const { name, description, n8nWebhookUrl, status = 'active', defaultKeys = [], project = 'Mặc định' } = req.body;
 
     if (!name || !n8nWebhookUrl) {
         return res.status(400).json({ error: 'Name and n8nWebhookUrl are required' });
@@ -48,10 +48,10 @@ router.post('/', (req, res) => {
 
     try {
         const stmt = db.prepare(`
-      INSERT INTO webhooks (id, name, description, status, n8nWebhookUrl, defaultKeys)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO webhooks (id, name, description, status, n8nWebhookUrl, defaultKeys, project)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
-        stmt.run(id, name, description || '', status, n8nWebhookUrl, JSON.stringify(defaultKeys));
+        stmt.run(id, name, description || '', status, n8nWebhookUrl, JSON.stringify(defaultKeys), project || 'Mặc định');
 
         const newWebhook = db.prepare('SELECT * FROM webhooks WHERE id = ?').get(id);
         try { newWebhook.defaultKeys = JSON.parse(newWebhook.defaultKeys); } catch (e) { newWebhook.defaultKeys = []; }
@@ -65,7 +65,7 @@ router.post('/', (req, res) => {
 // PUT /api/webhooks/:id - Update an existing webhook
 router.put('/:id', (req, res) => {
     const { id } = req.params;
-    const { name, description, n8nWebhookUrl, status, defaultKeys } = req.body;
+    const { name, description, n8nWebhookUrl, status, defaultKeys, project } = req.body;
 
     if (!name || !n8nWebhookUrl) {
         return res.status(400).json({ error: 'Name and n8nWebhookUrl are required' });
@@ -86,10 +86,10 @@ router.put('/:id', (req, res) => {
 
         const stmt = db.prepare(`
       UPDATE webhooks 
-      SET name = ?, description = ?, status = ?, n8nWebhookUrl = ?, defaultKeys = ?
+      SET name = ?, description = ?, status = ?, n8nWebhookUrl = ?, defaultKeys = ?, project = ?
       WHERE id = ?
     `);
-        stmt.run(name, description || '', status || 'active', n8nWebhookUrl, JSON.stringify(defaultKeys || []), id);
+        stmt.run(name, description || '', status || 'active', n8nWebhookUrl, JSON.stringify(defaultKeys || []), project || 'Mặc định', id);
 
         const updatedWebhook = db.prepare('SELECT * FROM webhooks WHERE id = ?').get(id);
         try { updatedWebhook.defaultKeys = JSON.parse(updatedWebhook.defaultKeys); } catch (e) { updatedWebhook.defaultKeys = []; }

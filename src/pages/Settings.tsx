@@ -34,6 +34,7 @@ interface WebhookFormData {
   n8nWebhookUrl: string;
   status: "active" | "inactive";
   defaultKeys: string[];
+  project: string;
 }
 
 const emptyForm: WebhookFormData = {
@@ -42,6 +43,7 @@ const emptyForm: WebhookFormData = {
   n8nWebhookUrl: "",
   status: "active",
   defaultKeys: [],
+  project: "Mặc định",
 };
 
 export default function Settings() {
@@ -53,6 +55,7 @@ export default function Settings() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [form, setForm] = useState<WebhookFormData>({ ...emptyForm });
   const [saving, setSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Load webhooks from backend on mount
   const loadWebhooks = async () => {
@@ -78,6 +81,7 @@ export default function Settings() {
       n8nWebhookUrl: wh.n8nWebhookUrl,
       status: wh.status,
       defaultKeys: wh.defaultKeys || [],
+      project: wh.project || "Mặc định",
     });
     setDialogOpen(true);
   };
@@ -148,38 +152,56 @@ export default function Settings() {
         </Button>
       </div>
 
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Tìm kiếm workflow theo tên, mô tả hoặc dự án..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="max-w-md"
+        />
+      </div>
+
       {/* Webhook list */}
-      <div className="space-y-2">
-        {webhooks.map((wh) => (
-          <div
-            key={wh.id}
-            className="flex items-center justify-between rounded-lg border border-border bg-card p-4"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-3">
-                <span className="font-medium truncate">{wh.name}</span>
-                <StatusBadge status={wh.status} />
+      <div className="space-y-4">
+        {webhooks
+          .filter(wh =>
+            wh.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            wh.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (wh.project || "Mặc định").toLowerCase().includes(searchQuery.toLowerCase())
+          )
+          .map((wh) => (
+            <div
+              key={wh.id}
+              className="flex items-center justify-between rounded-lg border border-border bg-card p-4"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-3">
+                  <span className="font-medium truncate">{wh.name}</span>
+                  <span className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                    {wh.project || "Mặc định"}
+                  </span>
+                  <StatusBadge status={wh.status} />
+                </div>
+                <p className="text-xs text-muted-foreground mt-1 truncate">
+                  {wh.description}
+                </p>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5 truncate font-mono">
-                {wh.n8nWebhookUrl}
-              </p>
+              <div className="flex items-center gap-1 ml-4 shrink-0">
+                <Button variant="ghost" size="icon" onClick={() => openEdit(wh)} aria-label="Sửa">
+                  <Pencil className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => confirmDelete(wh.id)}
+                  aria-label="Xoá"
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-1 ml-4 shrink-0">
-              <Button variant="ghost" size="icon" onClick={() => openEdit(wh)} aria-label="Sửa">
-                <Pencil className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => confirmDelete(wh.id)}
-                aria-label="Xoá"
-                className="text-destructive hover:text-destructive"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        ))}
+          ))}
         {webhooks.length === 0 && (
           <div className="text-center text-muted-foreground py-12">
             Chưa có workflow nào. Nhấn "Thêm Workflow" để bắt đầu.
@@ -218,6 +240,15 @@ export default function Settings() {
               <p className="text-xs text-muted-foreground">
                 URL webhook từ n8n workflow của bạn
               </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Dự án (Project)</Label>
+              <Input
+                value={form.project}
+                onChange={(e) => setForm((f) => ({ ...f, project: e.target.value }))}
+                placeholder="VD: App Backend"
+              />
             </div>
 
             <div className="space-y-2">

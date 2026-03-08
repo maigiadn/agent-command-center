@@ -6,6 +6,7 @@ export interface Webhook {
   n8nWebhookUrl: string;
   lastRun?: string;
   defaultKeys?: string[];
+  project?: string;
 }
 
 export interface WorkflowResult {

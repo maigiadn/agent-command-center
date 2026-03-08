@@ -24,13 +24,20 @@ db.exec(`
   )
 `);
 
-// Simple migration: add defaultKeys column to existing tables
+// Simple migration: add defaultKeys and project columns to existing tables
 try {
   const tableInfo = db.pragma('table_info(webhooks)');
+
   const hasDefaultKeys = tableInfo.some((col) => col.name === 'defaultKeys');
   if (!hasDefaultKeys) {
     db.exec(`ALTER TABLE webhooks ADD COLUMN defaultKeys TEXT DEFAULT '[]'`);
     console.log('Migration: Added defaultKeys column to webhooks table');
+  }
+
+  const hasProject = tableInfo.some((col) => col.name === 'project');
+  if (!hasProject) {
+    db.exec(`ALTER TABLE webhooks ADD COLUMN project TEXT DEFAULT 'Mặc định'`);
+    console.log('Migration: Added project column to webhooks table');
   }
 } catch (e) {
   // If PRAGMA or ALTER fails, ignore and assume either table doesn't exist yet or it already has it.
