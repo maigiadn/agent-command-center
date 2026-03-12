@@ -1,4 +1,4 @@
-import { LayoutDashboard, Settings } from "lucide-react";
+import { LayoutDashboard, Settings, MessageSquareText, Link2 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import {
@@ -15,6 +15,8 @@ import {
 
 const navItems = [
   { title: "Workflows", url: "/", icon: LayoutDashboard },
+  { title: "Prompts", url: "/prompts", icon: MessageSquareText },
+  { title: "Chuỗi Prompt", url: "/chains", icon: Link2 },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 

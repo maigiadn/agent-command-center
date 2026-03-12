@@ -4,6 +4,9 @@ const cors = require('cors');
 
 const webhookRoutes = require('./routes/webhooks');
 const executeRoutes = require('./routes/execute');
+const promptRoutes = require('./routes/prompts');
+const chainRoutes = require('./routes/chains');
+const backupRoutes = require('./routes/backup');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -21,6 +24,9 @@ app.use(express.json());
 // Routes
 app.use('/api/webhooks', webhookRoutes);
 app.use('/api/execute', executeRoutes);
+app.use('/api/prompts', promptRoutes);
+app.use('/api/chains', chainRoutes);
+app.use('/api/backup', backupRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
