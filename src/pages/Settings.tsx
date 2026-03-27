@@ -25,7 +25,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { StatusBadge } from "@/components/StatusBadge";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, RotateCcw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface WebhookFormData {
@@ -46,6 +46,8 @@ const emptyForm: WebhookFormData = {
   project: "Mặc định",
 };
 
+const DRAFT_KEY = "workflow-draft";
+
 export default function Settings() {
   const { toast } = useToast();
   const [webhooks, setWebhooks] = useState<Webhook[]>([]);
@@ -56,6 +58,7 @@ export default function Settings() {
   const [form, setForm] = useState<WebhookFormData>({ ...emptyForm });
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [hasDraft, setHasDraft] = useState(() => !!localStorage.getItem(DRAFT_KEY));
 
   // Load webhooks from backend on mount
   const loadWebhooks = async () => {
@@ -69,9 +72,38 @@ export default function Settings() {
 
   const openAdd = () => {
     setEditingId(null);
-    setForm({ ...emptyForm });
+    const draft = localStorage.getItem(DRAFT_KEY);
+    if (draft) {
+      try {
+        setForm(JSON.parse(draft));
+      } catch {
+        setForm({ ...emptyForm });
+      }
+    } else {
+      setForm({ ...emptyForm });
+    }
     setDialogOpen(true);
   };
+
+  const clearDraft = () => {
+    localStorage.removeItem(DRAFT_KEY);
+    setHasDraft(false);
+    setForm({ ...emptyForm });
+  };
+
+  // Auto-save draft when form changes (only for new workflow, not edit)
+  useEffect(() => {
+    if (dialogOpen && !editingId) {
+      const isBlank = JSON.stringify(form) === JSON.stringify(emptyForm);
+      if (!isBlank) {
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(form));
+        setHasDraft(true);
+      } else {
+        localStorage.removeItem(DRAFT_KEY);
+        setHasDraft(false);
+      }
+    }
+  }, [form, dialogOpen, editingId]);
 
   const openEdit = (wh: Webhook) => {
     setEditingId(wh.id);
@@ -130,6 +162,8 @@ export default function Settings() {
           return;
         }
         toast({ title: "Đã tạo workflow mới" });
+        localStorage.removeItem(DRAFT_KEY);
+        setHasDraft(false);
       }
       await loadWebhooks();
       setDialogOpen(false);
@@ -147,8 +181,11 @@ export default function Settings() {
             Quản lý danh sách workflow và Webhook URL
           </p>
         </div>
-        <Button onClick={openAdd} className="gap-2">
+        <Button onClick={openAdd} className="gap-2 relative">
           <Plus className="h-4 w-4" /> Thêm Workflow
+          {hasDraft && (
+            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-orange-500 border-2 border-background animate-pulse" title="Có bản nháp chưa hoàn thành" />
+          )}
         </Button>
       </div>
 
@@ -211,9 +248,22 @@ export default function Settings() {
 
       {/* Add / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingId ? "Sửa Workflow" : "Thêm Workflow"}</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle>{editingId ? "Sửa Workflow" : "Thêm Workflow"}</DialogTitle>
+              {!editingId && hasDraft && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearDraft}
+                  className="h-7 gap-1 text-xs text-muted-foreground hover:text-destructive"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  Xóa nháp
+                </Button>
+              )}
+            </div>
             <DialogDescription>
               Cấu hình tên và URL webhook trên n8n của bạn.
             </DialogDescription>
