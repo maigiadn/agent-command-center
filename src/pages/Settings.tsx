@@ -173,15 +173,15 @@ export default function Settings() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-6 max-w-5xl mx-auto pb-10">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Cài đặt</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <h1 className="text-xl md:text-2xl font-semibold tracking-tight text-foreground">Cài đặt</h1>
+          <p className="text-xs md:text-sm text-muted-foreground mt-1">
             Quản lý danh sách workflow và Webhook URL
           </p>
         </div>
-        <Button onClick={openAdd} className="gap-2 relative">
+        <Button onClick={openAdd} className="gap-2 relative w-full md:w-auto">
           <Plus className="h-4 w-4" /> Thêm Workflow
           {hasDraft && (
             <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-orange-500 border-2 border-background animate-pulse" title="Có bản nháp chưa hoàn thành" />
@@ -191,10 +191,10 @@ export default function Settings() {
 
       <div className="flex items-center gap-2">
         <Input
-          placeholder="Tìm kiếm workflow theo tên, mô tả hoặc dự án..."
+          placeholder="Tìm kiếm workflow..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="max-w-md"
+          className="w-full md:max-w-md"
         />
       </div>
 
@@ -209,30 +209,30 @@ export default function Settings() {
           .map((wh) => (
             <div
               key={wh.id}
-              className="flex items-center justify-between rounded-lg border border-border bg-card p-4"
+              className="flex flex-col md:flex-row md:items-center justify-between rounded-lg border border-border bg-card p-4 gap-4"
             >
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-3">
-                  <span className="font-medium truncate">{wh.name}</span>
-                  <span className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
+                <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                  <span className="font-medium text-sm md:text-base truncate max-w-[200px] md:max-w-none">{wh.name}</span>
+                  <span className="inline-flex items-center rounded-md bg-secondary px-2 py-0.5 text-[10px] md:text-xs font-medium text-secondary-foreground">
                     {wh.project || "Mặc định"}
                   </span>
                   <StatusBadge status={wh.status} />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 truncate">
+                <p className="text-xs text-muted-foreground mt-1 line-clamp-2 md:line-clamp-1">
                   {wh.description}
                 </p>
               </div>
-              <div className="flex items-center gap-1 ml-4 shrink-0">
-                <Button variant="ghost" size="icon" onClick={() => openEdit(wh)} aria-label="Sửa">
+              <div className="flex items-center gap-1 self-end md:self-center">
+                <Button variant="ghost" size="sm" className="h-8 w-8 px-0" onClick={() => openEdit(wh)} aria-label="Sửa">
                   <Pencil className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="ghost"
-                  size="icon"
+                  size="sm"
+                  className="h-8 w-8 px-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={() => confirmDelete(wh.id)}
                   aria-label="Xoá"
-                  className="text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
@@ -248,7 +248,7 @@ export default function Settings() {
 
       {/* Add / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-center justify-between">
               <DialogTitle>{editingId ? "Sửa Workflow" : "Thêm Workflow"}</DialogTitle>

@@ -27,6 +27,8 @@ import {
   ChevronRight, FileText, Sparkles, X,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ArrowLeft } from "lucide-react";
 
 // ─── Helper: extract variables from prompt content ─────────────
 function extractVariables(content: string): string[] {
@@ -77,6 +79,10 @@ export default function Prompts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
 
+  // Mobile navigation state
+  const isMobile = useIsMobile();
+  const [mobileView, setMobileView] = useState<'folders' | 'prompts' | 'details'>('folders');
+
   // Dialogs
   const [folderDialog, setFolderDialog] = useState(false);
   const [promptDialog, setPromptDialog] = useState(false);
@@ -114,7 +120,13 @@ export default function Prompts() {
     if (searchQuery) params.search = searchQuery;
     if (selectedTag) params.tag = selectedTag;
     const res = await fetchPrompts(params);
-    if (res.data) setPrompts(res.data);
+    if (res.data) {
+      setPrompts(res.data);
+      // Auto-switch to prompts view on mobile when a folder is selected
+      if (isMobile && selectedFolderId && mobileView === 'folders') {
+        setMobileView('prompts');
+      }
+    }
   };
 
   const loadTags = async () => {
@@ -135,6 +147,11 @@ export default function Prompts() {
     ]);
     if (versRes.data) setVersions(versRes.data);
     if (usageRes.data) setUsageLogs(usageRes.data);
+    
+    // Auto-switch to details view on mobile
+    if (isMobile) {
+      setMobileView('details');
+    }
   };
 
   // ─── Folder CRUD ───────────────────────────────────────────
@@ -370,9 +387,9 @@ export default function Prompts() {
   }, [prompts]);
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] gap-0 overflow-hidden rounded-lg border border-border">
+    <div className="flex h-[calc(100vh-7rem)] md:h-[calc(100vh-8rem)] gap-0 overflow-hidden rounded-lg border border-border">
       {/* ═══ Left: Folders Sidebar ═══ */}
-      <div className="w-64 shrink-0 border-r border-border bg-card/50 flex flex-col">
+      <div className={`${isMobile && mobileView !== 'folders' ? 'hidden' : 'flex'} w-full md:w-64 shrink-0 border-r border-border bg-card/50 flex-col`}>
         <div className="p-3 border-b border-border">
           <div className="flex items-center justify-between mb-2">
             <h2 className="text-sm font-semibold text-foreground">Thư mục</h2>
@@ -464,12 +481,19 @@ export default function Prompts() {
       </div>
 
       {/* ═══ Center: Prompt List ═══ */}
-      <div className="w-80 shrink-0 border-r border-border flex flex-col bg-background">
+      <div className={`${isMobile && mobileView !== 'prompts' ? 'hidden' : 'flex'} w-full md:w-80 shrink-0 border-r border-border flex-col bg-background`}>
         <div className="p-3 border-b border-border flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">
-            Prompts
-            {selectedTag && <span className="ml-1 text-xs font-normal text-muted-foreground">• #{selectedTag}</span>}
-          </h2>
+          <div className="flex items-center gap-2">
+            {isMobile && (
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setMobileView('folders')}>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            )}
+            <h2 className="text-sm font-semibold text-foreground">
+              Prompts
+              {selectedTag && <span className="ml-1 text-xs font-normal text-muted-foreground">• #{selectedTag}</span>}
+            </h2>
+          </div>
           <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={openAddPrompt}>
             <Plus className="h-3 w-3" /> Thêm
           </Button>
@@ -524,23 +548,24 @@ export default function Prompts() {
       </div>
 
       {/* ═══ Right: Detail Panel ═══ */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-background">
+      <div className={`${isMobile && mobileView !== 'details' ? 'hidden' : 'flex'} flex-1 flex-col overflow-hidden bg-background`}>
         {selectedPrompt ? (
           <>
             {/* Header */}
-            <div className="p-4 border-b border-border flex items-center justify-between">
-              <div className="min-w-0">
-                <h2 className="text-lg font-semibold truncate">{selectedPrompt.name}</h2>
-                <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                  <span>v{selectedPrompt.currentVersion}</span>
-                  <span>•</span>
-                  <span>{selectedPrompt.usageCount} lần sử dụng</span>
-                  {selectedPrompt.avgRating > 0 && (
-                    <>
-                      <span>•</span>
-                      <StarRating value={Math.round(selectedPrompt.avgRating)} readonly />
-                    </>
-                  )}
+            <div className="p-3 md:p-4 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                {isMobile && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setMobileView('prompts')}>
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                )}
+                <div className="min-w-0">
+                  <h2 className="text-base md:text-lg font-semibold truncate">{selectedPrompt.name}</h2>
+                  <div className="flex items-center gap-2 mt-0.5 text-[10px] md:text-xs text-muted-foreground">
+                    <span>v{selectedPrompt.currentVersion}</span>
+                    <span className="hidden md:inline">•</span>
+                    <span className="hidden md:inline">{selectedPrompt.usageCount} lần sử dụng</span>
+                  </div>
                 </div>
               </div>
               <div className="flex gap-2 shrink-0">

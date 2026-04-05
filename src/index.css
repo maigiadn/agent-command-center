@@ -94,4 +94,23 @@
     backdrop-filter: blur(12px);
     border: 1px solid hsl(var(--border) / 0.5);
   }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@layer utilities {
+  .text-xxs {
+    font-size: 0.625rem;
+    line-height: 0.75rem;
+  }
+  
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
 }

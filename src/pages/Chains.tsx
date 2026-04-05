@@ -18,9 +18,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import {
   Plus, Pencil, Trash2, ArrowRight, Link2, GripVertical,
-  Copy, Check, ChevronDown,
+  Copy, Check, ChevronDown, ArrowLeft,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // ─── Helpers ────────────────────────────────────────────────────
 function extractVariables(content: string): string[] {
@@ -47,6 +48,10 @@ export default function Chains() {
   const [chains, setChains] = useState<Chain[]>([]);
   const [allPrompts, setAllPrompts] = useState<Prompt[]>([]);
   const [selectedChain, setSelectedChain] = useState<Chain | null>(null);
+
+  // Mobile navigation state
+  const isMobile = useIsMobile();
+  const [showDetails, setShowDetails] = useState(false);
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -203,10 +208,15 @@ export default function Chains() {
     setTimeout(() => setCopiedStepId(null), 2000);
   };
 
+  const handleSelectChain = (chain: Chain) => {
+    setSelectedChain(chain);
+    if (isMobile) setShowDetails(true);
+  };
+
   return (
-    <div className="flex h-[calc(100vh-8rem)] gap-0 overflow-hidden rounded-lg border border-border">
+    <div className="flex h-[calc(100vh-7rem)] md:h-[calc(100vh-8rem)] gap-0 overflow-hidden rounded-lg border border-border">
       {/* ═══ Left: Chain List ═══ */}
-      <div className="w-80 shrink-0 border-r border-border flex flex-col bg-card/50">
+      <div className={`${isMobile && showDetails ? 'hidden' : 'flex'} w-full md:w-80 shrink-0 border-r border-border flex-col bg-card/50`}>
         <div className="p-3 border-b border-border flex items-center justify-between">
           <h2 className="text-sm font-semibold">Chuỗi Prompt</h2>
           <Button size="sm" variant="outline" className="h-7 gap-1 text-xs" onClick={openAdd}>
@@ -218,7 +228,7 @@ export default function Chains() {
             {chains.map(chain => (
               <button
                 key={chain.id}
-                onClick={() => setSelectedChain(chain)}
+                onClick={() => handleSelectChain(chain)}
                 className={`w-full text-left p-3 rounded-lg transition-all ${
                   selectedChain?.id === chain.id
                     ? "bg-primary/10 border border-primary/30 shadow-sm"
@@ -248,15 +258,22 @@ export default function Chains() {
       </div>
 
       {/* ═══ Right: Chain Detail ═══ */}
-      <div className="flex-1 flex flex-col overflow-hidden bg-background">
+      <div className={`${isMobile && !showDetails ? 'hidden' : 'flex'} flex-1 flex-col overflow-hidden bg-background`}>
         {selectedChain ? (
           <>
-            <div className="p-4 border-b border-border flex items-center justify-between">
-              <div>
-                <h2 className="text-lg font-semibold">{selectedChain.name}</h2>
-                {selectedChain.description && (
-                  <p className="text-xs text-muted-foreground mt-0.5">{selectedChain.description}</p>
+            <div className="p-3 md:p-4 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-3 min-w-0">
+                {isMobile && (
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setShowDetails(false)}>
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
                 )}
+                <div>
+                  <h2 className="text-base md:text-lg font-semibold truncate">{selectedChain.name}</h2>
+                  {selectedChain.description && (
+                    <p className="text-[10px] md:text-xs text-muted-foreground mt-0.5 truncate">{selectedChain.description}</p>
+                  )}
+                </div>
               </div>
               <div className="flex gap-2 shrink-0">
                 <Button variant="outline" size="sm" onClick={() => openEdit(selectedChain)}>

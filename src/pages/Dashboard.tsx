@@ -123,53 +123,79 @@ export default function Dashboard() {
   });
 
   return (
-    <div className="flex flex-col md:flex-row gap-6 h-[calc(100vh-8rem)]">
-      {/* Sidebar for Projects */}
-      <div className="w-full md:w-64 shrink-0 flex flex-col gap-2">
-        <h2 className="text-lg font-semibold tracking-tight px-2">Dự án</h2>
-        <div className="flex-1 overflow-y-auto space-y-1 pr-2">
+    <div className="flex flex-col gap-4 md:gap-6 h-[calc(100vh-7rem)] md:h-[calc(100vh-8rem)]">
+      {/* Sidebar for Projects - horizontal scroll on mobile, vertical sidebar on desktop */}
+      <div className="md:hidden shrink-0">
+        <h2 className="text-base font-semibold tracking-tight mb-2">Dự án</h2>
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-hide">
           {projects.map(project => (
             <button
               key={project}
               onClick={() => setSelectedProject(project)}
-              className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${selectedProject === project
+              className={`shrink-0 px-3 py-1.5 rounded-full text-sm transition-colors ${selectedProject === project
                   ? "bg-primary text-primary-foreground font-medium"
-                  : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                  : "bg-muted text-muted-foreground hover:text-foreground"
                 }`}
             >
               {project}
-              <span className="ml-2 rtl:mr-2 text-xs opacity-70 float-right">
+              <span className="ml-1.5 text-xs opacity-70">
                 {webhooks.filter(w => (w.project || "Mặc định") === project).length}
               </span>
             </button>
           ))}
           {projects.length === 0 && (
-            <div className="text-sm text-muted-foreground px-2 italic">Không có dự án</div>
+            <div className="text-sm text-muted-foreground italic">Không có dự án</div>
           )}
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col space-y-6 overflow-hidden">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Workflows</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Chọn workflow và nhấn "Chạy" để kích hoạt
-          </p>
+      <div className="flex flex-1 gap-6 overflow-hidden">
+        {/* Sidebar for Projects - desktop only */}
+        <div className="hidden md:flex w-64 shrink-0 flex-col gap-2">
+          <h2 className="text-lg font-semibold tracking-tight px-2">Dự án</h2>
+          <div className="flex-1 overflow-y-auto space-y-1 pr-2">
+            {projects.map(project => (
+              <button
+                key={project}
+                onClick={() => setSelectedProject(project)}
+                className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${selectedProject === project
+                    ? "bg-primary text-primary-foreground font-medium"
+                    : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                {project}
+                <span className="ml-2 rtl:mr-2 text-xs opacity-70 float-right">
+                  {webhooks.filter(w => (w.project || "Mặc định") === project).length}
+                </span>
+              </button>
+            ))}
+            {projects.length === 0 && (
+              <div className="text-sm text-muted-foreground px-2 italic">Không có dự án</div>
+            )}
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="Tìm kiếm workflow..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-md"
-          />
-        </div>
+        {/* Main Content Area */}
+        <div className="flex-1 flex flex-col space-y-4 md:space-y-6 overflow-hidden">
+          <div>
+            <h1 className="text-xl md:text-2xl font-semibold tracking-tight">Workflows</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Chọn workflow và nhấn "Chạy" để kích hoạt
+            </p>
+          </div>
 
-        {/* Workflow cards */}
-        <div className="flex-1 overflow-y-auto pr-2 pb-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder="Tìm kiếm workflow..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full md:max-w-md"
+            />
+          </div>
+
+          {/* Workflow cards */}
+          <div className="flex-1 overflow-y-auto pr-0 md:pr-2 pb-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
             {filteredWebhooks.map((wh) => (
               <div
                 key={wh.id}
@@ -213,6 +239,7 @@ export default function Dashboard() {
                 Chưa có workflow nào. Vào Settings để thêm.
               </div>
             )}
+            </div>
           </div>
         </div>
       </div>
